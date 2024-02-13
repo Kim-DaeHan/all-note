@@ -1,3 +1,4 @@
+use super::authenticate_token::AuthenticationGuard;
 use super::error::PostError;
 use super::model::QueryCode;
 use crate::api::login::model::{get_google_user, request_token};
@@ -19,8 +20,6 @@ pub async fn google_oauth_handler(
 
     let code = &query.code;
     let state = &query.state;
-
-    println!("{:?} {:?}", code, state);
 
     if code.is_empty() {
         return Ok(HttpResponse::Unauthorized().json(
@@ -51,4 +50,22 @@ pub async fn google_oauth_handler(
     let mut response = HttpResponse::Found();
     response.append_header((LOCATION, format!("{}{}", frontend_origin, state)));
     Ok(response.finish())
+}
+
+pub async fn get_me_handler(auth_guard: AuthenticationGuard, pool: Data<PgPool>) -> impl Responder {
+    // let vec = data.db.lock().unwrap();
+
+    // let user = vec
+    //     .iter()
+    //     .find(|user| user.id == Some(auth_guard.user_id.to_owned()));
+
+    // let json_response = UserResponse {
+    //     status: "success".to_string(),
+    //     data: UserData {
+    //         user: user_to_response(&user.unwrap()),
+    //     },
+    // };
+    println!("{:?}", auth_guard);
+
+    HttpResponse::Ok().json("adfasdf")
 }

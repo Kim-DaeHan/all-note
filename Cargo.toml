@@ -25,6 +25,7 @@ log = "0.4.20"
 futures-util = "0.3.30"
 futures-macro = "0.3.30"
 reqwest = { version = "0.11.24", features = ["json"] }
+jsonwebtoken = "9.2.0"
 
 [[bin]]
 name = "all-note"

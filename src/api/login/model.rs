@@ -1,5 +1,5 @@
 use reqwest::{Client, Url};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{env, error::Error};
 
 #[derive(Deserialize)]
@@ -18,6 +18,13 @@ pub struct GoogleUserResult {
     pub family_name: String,
     pub picture: String,
     pub locale: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TokenClaims {
+    pub sub: String,
+    pub iat: usize,
+    pub exp: usize,
 }
 
 #[derive(Debug, Deserialize)]
