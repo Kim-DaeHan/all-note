@@ -1,15 +1,20 @@
+use std::env;
+
 use super::authenticate_token::AuthenticationGuard;
 use super::error::PostError;
 use super::model::QueryCode;
-use crate::api::login::model::{get_google_user, request_token};
+use crate::api::login::model::{get_google_user, request_token, TokenClaims};
 use crate::database::PgPool;
-use actix_web::Responder;
+use actix_web::web::{Data, Query};
 use actix_web::{
-    web::{Data, Query},
-    HttpResponse, Result,
+    cookie::{time::Duration as ActixWebDuration, Cookie},
+    get, post, web, HttpResponse, Responder,
 };
+use chrono::{prelude::*, Duration};
+use jsonwebtoken::{encode, EncodingKey, Header};
 use log::{info, warn};
 use reqwest::header::LOCATION;
+use uuid::Uuid;
 
 pub async fn google_oauth_handler(
     query: Query<QueryCode>,
@@ -44,11 +49,41 @@ pub async fn google_oauth_handler(
 
     let google_user = google_user.unwrap();
 
-    println!("{:?}", google_user);
+    let email = google_user.email.to_lowercase();
 
-    let frontend_origin = "http://localhost:3000";
+    let user_id: String = google_user.id;
+
+    let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let max_age = env::var("TOKEN_MAXAGE").expect("TOKEN_MAXAGE must be set");
+    let now = Utc::now();
+    let iat = now.timestamp() as usize;
+    let exp = (now + Duration::minutes(max_age.parse::<i64>().unwrap())).timestamp() as usize;
+    let claims: TokenClaims = TokenClaims {
+        sub: user_id,
+        exp,
+        iat,
+    };
+
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(jwt_secret.as_ref()),
+    )
+    .unwrap();
+
+    let cookie = Cookie::build("token", token)
+        .path("/")
+        .max_age(ActixWebDuration::new(
+            60 * max_age.parse::<i64>().unwrap(),
+            0,
+        ))
+        .http_only(true)
+        .finish();
+
+    let frontend_origin = env::var("CLIENT_ORIGIN").expect("CLIENT_ORIGIN must be set");
     let mut response = HttpResponse::Found();
     response.append_header((LOCATION, format!("{}{}", frontend_origin, state)));
+    response.cookie(cookie);
     Ok(response.finish())
 }
 

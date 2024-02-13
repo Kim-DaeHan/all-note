@@ -1,4 +1,7 @@
-use std::future::{ready, Ready};
+use std::{
+    env,
+    future::{ready, Ready},
+};
 
 use actix_web::{
     dev::Payload,
@@ -7,6 +10,8 @@ use actix_web::{
 };
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde_json::json;
+
+use crate::database::PgPool;
 
 use super::model::TokenClaims;
 
@@ -35,38 +40,27 @@ impl FromRequest for AuthenticationGuard {
             )));
         }
 
-        // let data = req.app_data::<web::Data<AppState>>().unwrap();
+        let data = req.app_data::<web::Data<PgPool>>().unwrap();
 
-        // let jwt_secret = data.env.jwt_secret.to_owned();
-        // let decode = decode::<TokenClaims>(
-        //     token.unwrap().as_str(),
-        //     &DecodingKey::from_secret(jwt_secret.as_ref()),
-        //     &Validation::new(Algorithm::HS256),
-        // );
+        let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+        let decode = decode::<TokenClaims>(
+            token.unwrap().as_str(),
+            &DecodingKey::from_secret(jwt_secret.as_ref()),
+            &Validation::new(Algorithm::HS256),
+        );
 
-        // match decode {
-        //     Ok(token) => {
-        //         let vec = data.db.lock().unwrap();
-        //         let user = vec
-        //             .iter()
-        //             .find(|user| user.id == Some(token.claims.sub.to_owned()));
+        match decode {
+            Ok(token) => {
+                println!("data: {:?}", data);
+                println!("token.claims.sub: {:?}", Some(token.claims.sub.to_owned()));
 
-        //         if user.is_none() {
-        //             return ready(Err(ErrorUnauthorized(
-        //                 json!({"status": "fail", "message": "User belonging to this token no logger exists"}),
-        //             )));
-        //         }
-
-        //         ready(Ok(AuthenticationGuard {
-        //             user_id: token.claims.sub,
-        //         }))
-        //     }
-        //     Err(_) => ready(Err(ErrorUnauthorized(
-        //         json!({"status": "fail", "message": "Invalid token or usre doesn't exists"}),
-        //     ))),
-        // }
-        ready(Ok(AuthenticationGuard {
-            user_id: "123".to_owned(),
-        }))
+                ready(Ok(AuthenticationGuard {
+                    user_id: token.claims.sub,
+                }))
+            }
+            Err(_) => ready(Err(ErrorUnauthorized(
+                json!({"status": "fail", "message": "Invalid token or usre doesn't exists"}),
+            ))),
+        }
     }
 }
