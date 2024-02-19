@@ -49,9 +49,15 @@ pub async fn google_oauth_handler(
 
     let google_user = google_user.unwrap();
 
+    println!("===================={:?}===================", google_user);
+
     let email = google_user.email.to_lowercase();
 
+    // user email로 find
+
     let user_id: String = google_user.id;
+
+    // if 문으로 유저가 존재하면 update, 없으면 insert
 
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
     let max_age = env::var("TOKEN_MAXAGE").expect("TOKEN_MAXAGE must be set");
