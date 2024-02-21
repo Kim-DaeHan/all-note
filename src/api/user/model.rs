@@ -73,6 +73,11 @@ impl User {
             .get_result::<User>(conn)
     }
 
+    pub async fn get_users_by_id(user_id: &str, pool: &Data<PgPool>) -> Result<User, Error> {
+        let conn = &mut pool.get().expect("Couldn't get DB connection from pool");
+        users::table.find(user_id).get_result::<User>(conn)
+    }
+
     pub async fn delete_users_by_id(user_id: &str, pool: &Data<PgPool>) -> Result<usize, Error> {
         let conn = &mut pool.get().expect("Couldn't get DB connection from pool");
         diesel::delete(users::table.find(user_id)).execute(conn)

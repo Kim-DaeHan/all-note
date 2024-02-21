@@ -9,14 +9,12 @@ use crate::database::PgPool;
 use actix_web::web::{Data, Query};
 use actix_web::{
     cookie::{time::Duration as ActixWebDuration, Cookie},
-    get, post, web, HttpResponse, Responder,
+    HttpResponse, Responder,
 };
 use chrono::{prelude::*, Duration};
-use diesel::expression::is_aggregate::No;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use log::{error, info, warn};
 use reqwest::header::LOCATION;
-use uuid::Uuid;
 
 pub async fn google_oauth_handler(
     query: Query<QueryCode>,
@@ -147,8 +145,11 @@ pub async fn google_oauth_handler(
 }
 
 pub async fn get_me_handler(auth_guard: AuthenticationGuard, pool: Data<PgPool>) -> impl Responder {
-    // let vec = data.db.lock().unwrap();
+    let user_id = auth_guard.user_id;
 
+    let user = User::get_users_by_id(&user_id, &pool).await;
+
+    println!("user:::========== {:?}", user);
     // let user = vec
     //     .iter()
     //     .find(|user| user.id == Some(auth_guard.user_id.to_owned()));
@@ -159,7 +160,7 @@ pub async fn get_me_handler(auth_guard: AuthenticationGuard, pool: Data<PgPool>)
     //         user: user_to_response(&user.unwrap()),
     //     },
     // };
-    println!("{:?}", auth_guard);
+    // println!("auth_guard: {:?}", auth_guard);
 
     HttpResponse::Ok().json("adfasdf")
 }
