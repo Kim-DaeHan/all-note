@@ -1,9 +1,10 @@
 use std::env;
 
 use super::authenticate_token::AuthenticationGuard;
-use super::error::PostError;
+use super::error::LoginError;
 use super::model::QueryCode;
 use crate::api::login::model::{get_google_user, request_token, TokenClaims};
+use crate::api::user::model::{UpdateUserData, User, UserData};
 use crate::database::PgPool;
 use actix_web::web::{Data, Query};
 use actix_web::{
@@ -11,15 +12,16 @@ use actix_web::{
     get, post, web, HttpResponse, Responder,
 };
 use chrono::{prelude::*, Duration};
+use diesel::expression::is_aggregate::No;
 use jsonwebtoken::{encode, EncodingKey, Header};
-use log::{info, warn};
+use log::{error, info, warn};
 use reqwest::header::LOCATION;
 use uuid::Uuid;
 
 pub async fn google_oauth_handler(
     query: Query<QueryCode>,
     pool: Data<PgPool>,
-) -> Result<impl Responder, PostError> {
+) -> Result<impl Responder, LoginError> {
     info!("로깅 테스트");
     warn!("로깅 테스트2");
 
@@ -54,10 +56,61 @@ pub async fn google_oauth_handler(
     let email = google_user.email.to_lowercase();
 
     // user email로 find
+    let user = User::get_users_by_email(&email, &pool).await;
 
-    let user_id: String = google_user.id;
+    println!("user: {:?}", user);
+
+    let user_id: String;
 
     // if 문으로 유저가 존재하면 update, 없으면 insert
+    if user.is_ok() {
+        let user = user.unwrap();
+        user_id = user.id;
+
+        let user_data = UpdateUserData {
+            id: user_id.clone(),
+            google_id: google_user.id,
+            email: email.to_owned(),
+            user_name: google_user.name,
+            verified: google_user.verified_email,
+            provider: "Google".to_string(),
+            photo: google_user.picture,
+            updated_at: None,
+        };
+
+        let update_res = UpdateUserData::update_users(user_data, &pool).await;
+
+        if let Err(err) = update_res {
+            error!("Error updating user data: {:?}", err);
+            return Err(LoginError::InternalError);
+        }
+
+        if let Ok(0) = update_res {
+            error!("Update failed");
+            return Err(LoginError::BadClientData);
+        }
+    } else {
+        let user_data = UserData {
+            id: None,
+            google_id: google_user.id,
+            email: email.to_owned(),
+            user_name: google_user.name,
+            verified: google_user.verified_email,
+            provider: "Google".to_string(),
+            photo: google_user.picture,
+        };
+
+        let create_res = UserData::create_users(user_data, &pool).await;
+
+        if let Err(err) = create_res {
+            error!("Error created new user data: {:?}", err);
+            return Err(LoginError::BadClientData);
+        }
+
+        println!("res: {:?}", create_res);
+
+        user_id = create_res.unwrap();
+    }
 
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
     let max_age = env::var("TOKEN_MAXAGE").expect("TOKEN_MAXAGE must be set");

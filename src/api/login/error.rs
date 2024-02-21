@@ -13,7 +13,7 @@ struct ErrorResponse {
 }
 
 #[derive(Debug, Display, Error)]
-pub enum PostError {
+pub enum LoginError {
     #[display(fmt = "internal error")]
     InternalError,
 
@@ -27,7 +27,7 @@ pub enum PostError {
     ValidationError { field: String },
 }
 
-impl ResponseError for PostError {
+impl ResponseError for LoginError {
     fn error_response(&self) -> HttpResponse {
         let error_response = ErrorResponse {
             code: self.status_code().as_u16(),
@@ -41,10 +41,10 @@ impl ResponseError for PostError {
 
     fn status_code(&self) -> StatusCode {
         match *self {
-            PostError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            PostError::BadClientData => StatusCode::BAD_REQUEST,
-            PostError::Timeout => StatusCode::GATEWAY_TIMEOUT,
-            PostError::ValidationError { .. } => StatusCode::BAD_REQUEST,
+            LoginError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            LoginError::BadClientData => StatusCode::BAD_REQUEST,
+            LoginError::Timeout => StatusCode::GATEWAY_TIMEOUT,
+            LoginError::ValidationError { .. } => StatusCode::BAD_REQUEST,
         }
     }
 }

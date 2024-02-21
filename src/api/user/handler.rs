@@ -1,5 +1,5 @@
 use super::error::UserError;
-use super::model::{EmailQueryParam, User, UserData};
+use super::model::{EmailQueryParam, UpdateUserData, User, UserData};
 use crate::database::PgPool;
 use actix_web::Responder;
 use actix_web::{http::header::ContentType, web, web::Data, HttpRequest, HttpResponse, Result};
@@ -77,29 +77,23 @@ pub async fn create_users(
 }
 
 pub async fn update_users(
-    _body: web::Json<UserData>,
+    _body: web::Json<UpdateUserData>,
     pool: Data<PgPool>,
 ) -> Result<HttpResponse, UserError> {
     let user_data = _body.into_inner();
 
-    match user_data.id {
-        Some(_) => match UserData::update_users(user_data, &pool).await {
-            Ok(0) => {
-                error!("Update failed");
-                Err(UserError::BadClientData)
-            }
-            Err(err) => {
-                error!("Error updated user data: {:?}", err);
-                Err(UserError::InternalError)
-            }
-            Ok(_) => Ok(HttpResponse::Ok()
-                .content_type(ContentType::json())
-                .body("updated new user")),
-        },
-        None => {
-            // user_data.id가 None인 경우의 동작
+    match UpdateUserData::update_users(user_data, &pool).await {
+        Ok(0) => {
+            error!("Update failed");
             Err(UserError::BadClientData)
         }
+        Err(err) => {
+            error!("Error updated user data: {:?}", err);
+            Err(UserError::InternalError)
+        }
+        Ok(_) => Ok(HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body("updated new user")),
     }
 }
 

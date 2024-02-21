@@ -21,7 +21,7 @@ pub struct User {
     pub updated_at: Option<chrono::NaiveDateTime>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Insertable, AsChangeset)]
+#[derive(Serialize, Deserialize, Debug, Clone, Insertable)]
 #[diesel(table_name = crate::schema::users)]
 pub struct UserData {
     pub id: Option<String>,
@@ -31,8 +31,21 @@ pub struct UserData {
     pub verified: bool,
     pub provider: String,
     pub photo: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, AsChangeset)]
+#[diesel(table_name = crate::schema::users)]
+pub struct UpdateUserData {
+    pub id: String,
+    pub google_id: String,
+    pub email: String,
+    pub user_name: String,
+    pub verified: bool,
+    pub provider: String,
+    pub photo: String,
     pub updated_at: Option<chrono::NaiveDateTime>,
 }
+
 #[derive(Deserialize, Debug)]
 pub struct EmailQueryParam {
     pub email: String,
@@ -67,7 +80,7 @@ impl User {
 }
 
 impl UserData {
-    pub async fn create_users(user_data: UserData, pool: &Data<PgPool>) -> Result<(), Error> {
+    pub async fn create_users(user_data: UserData, pool: &Data<PgPool>) -> Result<String, Error> {
         let user = UserData {
             id: Some(Uuid::new_v4().to_string()),
             ..user_data
@@ -77,21 +90,27 @@ impl UserData {
 
         diesel::insert_into(users::table)
             .values(user)
-            .execute(conn)?;
-        Ok(())
+            .returning(users::id)
+            .get_result::<String>(conn)
     }
+}
 
-    pub async fn update_users(user_data: UserData, pool: &Data<PgPool>) -> Result<usize, Error> {
+impl UpdateUserData {
+    pub async fn update_users(
+        user_data: UpdateUserData,
+        pool: &Data<PgPool>,
+    ) -> Result<usize, Error> {
         let conn = &mut pool.get().expect("Couldn't get DB connection from pool");
         let updated_date = Some(Utc::now().naive_utc());
 
-        let user = UserData {
-            id: None,
+        let user_id = user_data.id.clone();
+
+        let user = UpdateUserData {
             updated_at: updated_date,
             ..user_data
         };
 
-        diesel::update(users::table.find(user_data.id.unwrap()))
+        diesel::update(users::table.find(user_id))
             .set(user)
             .execute(conn)
     }
