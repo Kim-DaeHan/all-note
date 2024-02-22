@@ -3,7 +3,7 @@ use std::env;
 use super::authenticate_token::AuthenticationGuard;
 use super::error::LoginError;
 use super::model::QueryCode;
-use crate::api::login::model::{get_google_user, request_token, TokenClaims};
+use crate::api::auth::model::{get_google_user, request_token, TokenClaims};
 use crate::api::user::model::{UpdateUserData, User, UserData};
 use crate::database::PgPool;
 use actix_web::web::{Data, Query};
