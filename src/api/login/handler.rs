@@ -49,14 +49,10 @@ pub async fn google_oauth_handler(
 
     let google_user = google_user.unwrap();
 
-    println!("===================={:?}===================", google_user);
-
     let email = google_user.email.to_lowercase();
 
     // user email로 find
     let user = User::get_users_by_email(&email, &pool).await;
-
-    println!("user: {:?}", user);
 
     let user_id: String;
 
@@ -105,8 +101,6 @@ pub async fn google_oauth_handler(
             return Err(LoginError::BadClientData);
         }
 
-        println!("res: {:?}", create_res);
-
         user_id = create_res.unwrap();
     }
 
@@ -144,23 +138,29 @@ pub async fn google_oauth_handler(
     Ok(response.finish())
 }
 
-pub async fn get_me_handler(auth_guard: AuthenticationGuard, pool: Data<PgPool>) -> impl Responder {
+pub async fn get_me_handler(
+    auth_guard: AuthenticationGuard,
+    pool: Data<PgPool>,
+) -> Result<impl Responder, LoginError> {
     let user_id = auth_guard.user_id;
 
-    let user = User::get_users_by_id(&user_id, &pool).await;
+    match User::get_users_by_id(&user_id, &pool).await {
+        Ok(user) => Ok(HttpResponse::Ok().json(user)),
+        Err(err) => {
+            error!("Error getting user by ID: {:?}", err);
+            Err(LoginError::BadClientData)
+        }
+    }
+}
 
-    println!("user:::========== {:?}", user);
-    // let user = vec
-    //     .iter()
-    //     .find(|user| user.id == Some(auth_guard.user_id.to_owned()));
+pub async fn logout_handler(_: AuthenticationGuard) -> impl Responder {
+    let cookie = Cookie::build("token", "")
+        .path("/")
+        .max_age(ActixWebDuration::new(-1, 0))
+        .http_only(true)
+        .finish();
 
-    // let json_response = UserResponse {
-    //     status: "success".to_string(),
-    //     data: UserData {
-    //         user: user_to_response(&user.unwrap()),
-    //     },
-    // };
-    // println!("auth_guard: {:?}", auth_guard);
-
-    HttpResponse::Ok().json("adfasdf")
+    HttpResponse::Ok()
+        .cookie(cookie)
+        .json(serde_json::json!({"status": "success"}))
 }

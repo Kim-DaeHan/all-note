@@ -10,14 +10,14 @@ pub struct OAuthResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct GoogleUserResult {
-    pub id: String,
-    pub email: String,
-    pub verified_email: bool,
-    pub name: String,
-    pub given_name: String,
-    pub family_name: String,
-    pub picture: String,
-    pub locale: String,
+    pub id: String,           // 사용자의 고유한 Google ID
+    pub email: String,        // 사용자의 이메일 주소
+    pub verified_email: bool, // 이메일 주소의 인증 여부 (true/false)
+    pub name: String,         // 사용자의 전체 이름
+    pub given_name: String,   // 사용자의 이름
+    pub family_name: String,  // 사용자의 성
+    pub picture: String,      // 사용자의 프로필 사진 URL
+    pub locale: String,       // 사용자의 지역 설정
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,7 +64,7 @@ pub async fn get_google_user(
     id_token: &str,
 ) -> Result<GoogleUserResult, Box<dyn Error>> {
     let client = Client::new();
-    let mut url = Url::parse("https://www.googleapis.com/oauth2/v1/userinfo").unwrap();
+    let mut url = Url::parse("https://www.googleapis.com/oauth2/v2/userinfo").unwrap();
     url.query_pairs_mut().append_pair("alt", "json");
     url.query_pairs_mut()
         .append_pair("access_token", access_token);

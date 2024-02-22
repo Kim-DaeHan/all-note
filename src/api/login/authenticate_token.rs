@@ -11,7 +11,7 @@ use actix_web::{
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde_json::json;
 
-use crate::database::PgPool;
+use crate::{api::user::model::User, database::PgPool};
 
 use super::model::TokenClaims;
 
@@ -40,7 +40,7 @@ impl FromRequest for AuthenticationGuard {
             )));
         }
 
-        let data = req.app_data::<web::Data<PgPool>>().unwrap();
+        let pool = req.app_data::<web::Data<PgPool>>().unwrap();
 
         let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
         let decode = decode::<TokenClaims>(
@@ -51,12 +51,17 @@ impl FromRequest for AuthenticationGuard {
 
         match decode {
             Ok(token) => {
-                println!("data: {:?}", data);
-                println!("token.claims.sub: {:?}", Some(token.claims.sub.to_owned()));
+                let user_id = token.claims.sub.to_owned();
 
-                ready(Ok(AuthenticationGuard {
-                    user_id: token.claims.sub,
-                }))
+                let user = User::get_users_auth(&user_id, &pool);
+
+                if user.is_err() {
+                    return ready(Err(ErrorUnauthorized(
+                        json!({"status": "fail", "message": "User belonging to this token no logger exists"}),
+                    )));
+                }
+
+                ready(Ok(AuthenticationGuard { user_id: user_id }))
             }
             Err(_) => ready(Err(ErrorUnauthorized(
                 json!({"status": "fail", "message": "Invalid token or usre doesn't exists"}),

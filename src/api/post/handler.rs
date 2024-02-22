@@ -10,9 +10,7 @@ pub async fn get_posts(pool: Data<PgPool>) -> Result<impl Responder, PostError> 
     info!("로깅 테스트");
     warn!("로깅 테스트2");
 
-    let post_list = Post::get_posts_load(&pool).await;
-
-    println!("{:?}", post_list);
+    // let post_list = Post::get_posts_load(&pool).await;
 
     match Post::get_posts(&pool).await {
         Ok(post_data) => {

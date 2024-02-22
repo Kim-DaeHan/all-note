@@ -10,9 +10,7 @@ pub async fn get_users(pool: Data<PgPool>) -> Result<impl Responder, UserError> 
     info!("로깅 테스트");
     warn!("로깅 테스트2");
 
-    let user_list = User::get_users_load(&pool).await;
-
-    println!("{:?}", user_list);
+    // let user_list = User::get_users_load(&pool).await;
 
     match User::get_users(&pool).await {
         Ok(user_data) => {
