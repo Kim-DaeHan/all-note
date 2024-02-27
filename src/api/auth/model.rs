@@ -36,7 +36,7 @@ pub struct QueryCode {
 pub async fn request_token(authorization_code: &str) -> Result<OAuthResponse, Box<dyn Error>> {
     let redirect_url = env::var("REDIRECT_URL").expect("REDIRECT_URL must be set");
     let client_secret = env::var("CLIENT_SECRET").expect("CLIENT_SECRET must be set");
-    let client_id = env::var("CLIENT_ID").expect("CLIENT_ID must be set...");
+    let client_id = env::var("CLIENT_ID").expect("CLIENT_ID must be set");
 
     let root_url = "https://oauth2.googleapis.com/token";
     let client = Client::new();
