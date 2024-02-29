@@ -75,7 +75,7 @@ pub async fn get_google_user(
         let user_info = response.json::<GoogleUserResult>().await?;
         Ok(user_info)
     } else {
-        let message = "An error occurred while trying to retrieve user information.";
+        let message = "An error occurred while trying to retrieve user information";
         Err(From::from(message))
     }
 }
