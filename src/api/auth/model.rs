@@ -17,7 +17,7 @@ pub struct GoogleUserResult {
     pub given_name: String,   // 사용자의 이름
     pub family_name: String,  // 사용자의 성
     pub picture: String,      // 사용자의 프로필 사진 URL
-    pub locale: String,       // 사용자의 지역 설정
+                              // pub locale: String,       // 사용자의 지역 설정
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -73,6 +73,7 @@ pub async fn get_google_user(
 
     if response.status().is_success() {
         let user_info = response.json::<GoogleUserResult>().await?;
+        println!("{:?}", user_info);
         Ok(user_info)
     } else {
         let message = "An error occurred while trying to retrieve user information";
