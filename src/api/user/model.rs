@@ -110,7 +110,7 @@ impl UpdateUserData {
         user_data: UpdateUserData,
         pool: &Data<PgPool>,
     ) -> Result<usize, Error> {
-        let conn = &mut pool.get().expect("Couldn't get DB connection from pool.");
+        let conn = &mut pool.get().expect("Couldn't get DB connection from pool");
         let updated_date = Some(Utc::now().naive_utc());
 
         let user_id = user_data.id.clone();
