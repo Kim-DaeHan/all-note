@@ -53,7 +53,7 @@ pub struct EmailQueryParam {
 
 impl User {
     pub async fn get_users(pool: &Data<PgPool>) -> Result<Vec<(String, String)>, Error> {
-        let conn = &mut pool.get().expect("Couldn't get DB connection from pool");
+        let conn = &mut pool.get().expect("Couldn't get DB connection from pool123");
 
         users::table
             .select((users::id, users::email))
